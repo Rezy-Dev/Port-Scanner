@@ -9,10 +9,10 @@ def scan_port(host, port):
         sock.settimeout(1)  # Adjust the timeout as needed
         result = sock.connect_ex((host, port))
         if result == 0:
-            print(f"Port {port} is open")
+            return port  # Return the opened port
         sock.close()
     except socket.error:
-        print(f"Error occurred while scanning port {port}")
+        pass  # Ignore connection errors
 
 def print_banner():
     banner = '''
@@ -36,16 +36,28 @@ start_time = datetime.datetime.now()
 max_workers = 100
 
 executor = ThreadPoolExecutor(max_workers=max_workers)
+
 futures = []
 
 for port in range(1, 65536):
-    # Submit a new port scan task to the executor and store the Future object
     future = executor.submit(scan_port, host, port)
     futures.append(future)
 
+opened_ports = []
+
 for future in futures:
-    future.result()
+    result = future.result()
+    if result:
+        opened_ports.append(result)
 
 end_time = datetime.datetime.now()
 scan_time = end_time - start_time
+
+if opened_ports:
+    print("Opened ports:")
+    for port in opened_ports:
+        print(f"Port {port} is open")
+else:
+    print("No open ports found")
+
 print(f"Scanning completed in {scan_time}")
